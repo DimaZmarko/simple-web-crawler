@@ -91,14 +91,20 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # We build the prod images to verify they compile, then load them into the
+      # local daemon. `load: true` gives the build a real output target (without it
+      # the docker-container driver warns the result is discarded). We intentionally
+      # do NOT use `cache-to/from: type=gha`: the GitHub Actions cache backend was
+      # rejecting the cache export with `error writing layer blob: not_found`. If
+      # cross-run layer caching is wanted back, re-add it with a BuildKit pinned to
+      # the cache-service v2 API (driver-opts: image=moby/buildkit:<v0.20+>).
       - name: Build API image
         uses: docker/build-push-action@v6
         with:
           context: apps/api
           target: prod
           push: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          load: true
 
       - name: Build web image
         uses: docker/build-push-action@v6
@@ -106,5 +112,4 @@ jobs:
           context: apps/web
           target: prod
           push: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          load: true
