@@ -1,0 +1,91 @@
+openapi: 3.1.0
+info:
+  title: Simple Web Crawler API
+  version: 0.2.0
+  description: Single source of truth for the crawler HTTP API. Generated clients derive from this file.
+paths:
+  /crawls:
+    post:
+      operationId: createCrawl
+      summary: Submit a crawl job
+      responses:
+        "202":
+          description: Crawl accepted
+  /healthz:
+    get:
+      operationId: healthz
+      summary: Liveness probe
+      responses:
+        "200":
+          description: Service is alive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+              example:
+                status: ok
+  /readyz:
+    get:
+      operationId: readyz
+      summary: Readiness probe
+      responses:
+        "200":
+          description: Service is ready; dependency checks passed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessStatus'
+              example:
+                status: ok
+                checks:
+                  db: ok
+        "503":
+          description: Service is not ready; a dependency check failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessStatus'
+              example:
+                status: degraded
+                checks:
+                  db: down
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      description: Liveness response indicating the process is up and serving requests.
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+      example:
+        status: ok
+    ReadinessStatus:
+      type: object
+      description: Readiness response reporting aggregate status and per-dependency check results.
+      required:
+        - status
+        - checks
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+            - degraded
+        checks:
+          type: object
+          required:
+            - db
+          properties:
+            db:
+              type: string
+              enum:
+                - ok
+                - down
+      example:
+        status: ok
+        checks:
+          db: ok

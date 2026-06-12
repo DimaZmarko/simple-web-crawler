@@ -1,0 +1,75 @@
+basePath: /
+definitions:
+  types.HealthStatus:
+    properties:
+      status:
+        $ref: '#/definitions/types.HealthStatusStatus'
+    type: object
+  types.HealthStatusStatus:
+    enum:
+    - ok
+    type: string
+    x-enum-varnames:
+    - HealthStatusStatusOk
+  types.ReadinessStatus:
+    properties:
+      checks:
+        properties:
+          db:
+            $ref: '#/definitions/types.ReadinessStatusChecksDb'
+        type: object
+      status:
+        $ref: '#/definitions/types.ReadinessStatusStatus'
+    type: object
+  types.ReadinessStatusChecksDb:
+    enum:
+    - down
+    - ok
+    type: string
+    x-enum-varnames:
+    - ReadinessStatusChecksDbDown
+    - ReadinessStatusChecksDbOk
+  types.ReadinessStatusStatus:
+    enum:
+    - degraded
+    - ok
+    type: string
+    x-enum-varnames:
+    - Degraded
+    - Ok
+info:
+  contact: {}
+  description: Single source of truth for the crawler HTTP API. Generated clients
+    derive from this file.
+  title: Simple Web Crawler API
+  version: 0.2.0
+paths:
+  /healthz:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/types.HealthStatus'
+      summary: Liveness probe
+      tags:
+      - health
+  /readyz:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/types.ReadinessStatus'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/types.ReadinessStatus'
+      summary: Readiness probe
+      tags:
+      - health
+swagger: "2.0"

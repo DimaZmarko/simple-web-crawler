@@ -1,0 +1,113 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Single source of truth for the crawler HTTP API. Generated clients derive from this file.",
+        "title": "Simple Web Crawler API",
+        "contact": {},
+        "version": "0.2.0"
+    },
+    "basePath": "/",
+    "paths": {
+        "/healthz": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Liveness probe",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/types.HealthStatus"
+                        }
+                    }
+                }
+            }
+        },
+        "/readyz": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Readiness probe",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/types.ReadinessStatus"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/types.ReadinessStatus"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "types.HealthStatus": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "$ref": "#/definitions/types.HealthStatusStatus"
+                }
+            }
+        },
+        "types.HealthStatusStatus": {
+            "type": "string",
+            "enum": [
+                "ok"
+            ],
+            "x-enum-varnames": [
+                "HealthStatusStatusOk"
+            ]
+        },
+        "types.ReadinessStatus": {
+            "type": "object",
+            "properties": {
+                "checks": {
+                    "type": "object",
+                    "properties": {
+                        "db": {
+                            "$ref": "#/definitions/types.ReadinessStatusChecksDb"
+                        }
+                    }
+                },
+                "status": {
+                    "$ref": "#/definitions/types.ReadinessStatusStatus"
+                }
+            }
+        },
+        "types.ReadinessStatusChecksDb": {
+            "type": "string",
+            "enum": [
+                "down",
+                "ok"
+            ],
+            "x-enum-varnames": [
+                "ReadinessStatusChecksDbDown",
+                "ReadinessStatusChecksDbOk"
+            ]
+        },
+        "types.ReadinessStatusStatus": {
+            "type": "string",
+            "enum": [
+                "degraded",
+                "ok"
+            ],
+            "x-enum-varnames": [
+                "Degraded",
+                "Ok"
+            ]
+        }
+    }
+}

@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  GOFLAGS: -mod=mod
+
+jobs:
+  check:
+    name: Quality gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: apps/api/go.mod
+          cache-dependency-path: apps/api/go.sum
+
+      - name: Backend lint and test
+        run: make lint-api test-api
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+
+      # Mirrors `make lint-web`, `make typecheck-web`, and `make test-web`.
+      # Native pnpm on CI is faster and more cache-friendly than the Docker-based
+      # web_exec helper used for local dev without Node installed.
+      - name: Frontend lint, typecheck, and test
+        working-directory: apps/web
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm lint
+          pnpm exec tsc --noEmit
+          pnpm test
+
+      # Mirrors `make gen-contract` using the Node toolchain already on the runner.
+      # Versions are pinned to match the Makefile (OAPI_CODEGEN_VERSION / OPENAPI_TS_VERSION)
+      # so this drift gate can't fail on an unrelated tool release.
+      - name: Regenerate contract clients
+        run: |
+          (cd apps/api/internal/api/types && go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.7.1 \
+            -config oapi-codegen.yaml ../../../../../packages/api-contract/openapi.yaml)
+          npx -y openapi-typescript@7.13.0 \
+            packages/api-contract/openapi.yaml \
+            -o apps/web/src/api/__generated__/schema.d.ts
+
+      - name: Verify generated contract artifacts are committed
+        run: |
+          git diff --exit-code -- \
+            apps/api/internal/api/types/types.gen.go \
+            apps/web/src/api/__generated__/schema.d.ts
+
+      - name: Regenerate swagger docs
+        run: make swagger
+
+      - name: Verify swagger docs are committed
+        run: git diff --exit-code -- apps/api/docs/
+
+  docker:
+    name: Docker images
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build API image
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/api
+          target: prod
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build web image
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/web
+          target: prod
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

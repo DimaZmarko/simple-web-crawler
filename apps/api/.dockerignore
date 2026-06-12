@@ -1,0 +1,9 @@
+.git
+tmp/
+bin/
+*.test
+*.out
+docs/
+**/*_test.go
+Dockerfile
+.dockerignore
