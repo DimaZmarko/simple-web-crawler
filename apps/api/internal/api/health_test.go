@@ -61,7 +61,7 @@ func TestHealthEndpoints(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			router := NewRouter(tc.pinger, zerolog.Nop())
+			router := NewRouter(tc.pinger, nil, zerolog.Nop())
 
 			req := httptest.NewRequest(tc.method, tc.path, nil)
 			rec := httptest.NewRecorder()
@@ -111,7 +111,7 @@ func TestHealthEndpoints(t *testing.T) {
 // Access-Control-Allow-Origin header, so the web app can read /readyz cross-origin.
 func TestCORSAllowsConfiguredOrigin(t *testing.T) {
 	const origin = "http://localhost:3000"
-	router := NewRouter(fakePinger{err: nil}, zerolog.Nop(), origin)
+	router := NewRouter(fakePinger{err: nil}, nil, zerolog.Nop(), origin)
 
 	req := httptest.NewRequest(http.MethodGet, "/readyz", nil)
 	req.Header.Set("Origin", origin)
@@ -126,7 +126,7 @@ func TestCORSAllowsConfiguredOrigin(t *testing.T) {
 // TestReadyzMatchesContractTypes guards that the readiness handler emits the
 // exact enum values defined by the generated contract types.
 func TestReadyzMatchesContractTypes(t *testing.T) {
-	router := NewRouter(fakePinger{err: nil}, zerolog.Nop())
+	router := NewRouter(fakePinger{err: nil}, nil, zerolog.Nop())
 
 	req := httptest.NewRequest(http.MethodGet, "/readyz", nil)
 	rec := httptest.NewRecorder()

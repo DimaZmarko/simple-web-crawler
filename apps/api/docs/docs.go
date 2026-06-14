@@ -15,6 +15,117 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/crawls": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "crawls"
+                ],
+                "summary": "List crawl jobs (cursor-paginated, newest first)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Opaque base64url pagination token",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Maximum number of items to return",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/types.CrawlList"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/types.ValidationError"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "crawls"
+                ],
+                "summary": "Submit a crawl job",
+                "parameters": [
+                    {
+                        "description": "Crawl configuration",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.CreateCrawlRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/types.Crawl"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/types.ValidationError"
+                        }
+                    }
+                }
+            }
+        },
+        "/crawls/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "crawls"
+                ],
+                "summary": "Fetch a single crawl job by id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Crawl id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/types.Crawl"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/types.NotFoundError"
+                        }
+                    }
+                }
+            }
+        },
         "/healthz": {
             "get": {
                 "produces": [
@@ -61,6 +172,113 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "types.Crawl": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "maxDepth": {
+                    "type": "integer"
+                },
+                "maxPages": {
+                    "type": "integer"
+                },
+                "seedUrl": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status Lifecycle state of a crawl. Only queued is supported for now; more states are added in later specs.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.CrawlStatus"
+                        }
+                    ]
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "types.CrawlList": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.CrawlSummary"
+                    }
+                },
+                "nextCursor": {
+                    "description": "NextCursor Opaque token for the next page, or null when there are no more pages.",
+                    "type": "string"
+                }
+            }
+        },
+        "types.CrawlStatus": {
+            "type": "string",
+            "enum": [
+                "queued"
+            ],
+            "x-enum-varnames": [
+                "Queued"
+            ]
+        },
+        "types.CrawlSummary": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "seedUrl": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status Lifecycle state of a crawl. Only queued is supported for now; more states are added in later specs.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.CrawlStatus"
+                        }
+                    ]
+                }
+            }
+        },
+        "types.CreateCrawlRequest": {
+            "type": "object",
+            "properties": {
+                "maxDepth": {
+                    "description": "MaxDepth Maximum link depth to follow from the seed URL.",
+                    "type": "integer"
+                },
+                "maxPages": {
+                    "description": "MaxPages Maximum number of pages to fetch.",
+                    "type": "integer"
+                },
+                "seedUrl": {
+                    "description": "SeedUrl Absolute http or https URL to start crawling from.",
+                    "type": "string"
+                }
+            }
+        },
+        "types.FieldError": {
+            "type": "object",
+            "properties": {
+                "field": {
+                    "description": "Field Name of the request field that failed validation.",
+                    "type": "string"
+                },
+                "message": {
+                    "description": "Message Human-readable explanation of the failure.",
+                    "type": "string"
+                }
+            }
+        },
         "types.HealthStatus": {
             "type": "object",
             "properties": {
@@ -77,6 +295,15 @@ const docTemplate = `{
             "x-enum-varnames": [
                 "HealthStatusStatusOk"
             ]
+        },
+        "types.NotFoundError": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "description": "Message Human-readable explanation of what was not found.",
+                    "type": "string"
+                }
+            }
         },
         "types.ReadinessStatus": {
             "type": "object",
@@ -115,6 +342,21 @@ const docTemplate = `{
                 "Degraded",
                 "Ok"
             ]
+        },
+        "types.ValidationError": {
+            "type": "object",
+            "properties": {
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.FieldError"
+                    }
+                },
+                "message": {
+                    "description": "Message Summary of the validation failure.",
+                    "type": "string"
+                }
+            }
         }
     }
 }`
