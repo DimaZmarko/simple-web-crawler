@@ -321,6 +321,26 @@ export interface operations {
                     "application/json": components["schemas"]["CrawlList"];
                 };
             };
+            /** @description Invalid pagination parameters; limit out of range/non-numeric or cursor undecodable */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "message": "Request validation failed",
+                     *       "errors": [
+                     *         {
+                     *           "field": "limit",
+                     *           "message": "must be an integer between 1 and 100"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ValidationError"];
+                };
+            };
         };
     };
     createCrawl: {

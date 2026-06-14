@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Simple Web Crawler API
-  version: 0.3.0
+  version: 0.3.1
   description: Single source of truth for the crawler HTTP API. Generated clients derive from this file.
 paths:
   /crawls:
@@ -83,6 +83,17 @@ paths:
                     status: queued
                     createdAt: "2026-06-14T09:45:00Z"
                 nextCursor: eyJjcmVhdGVkQXQiOiIyMDI2LTA2LTE0VDA5OjQ1OjAwWiIsImlkIjoiMWEyYjNjNGQ="
+        "400":
+          description: Invalid pagination parameters; limit out of range/non-numeric or cursor undecodable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              example:
+                message: Request validation failed
+                errors:
+                  - field: limit
+                    message: must be an integer between 1 and 100
   /crawls/{id}:
     get:
       operationId: getCrawl
