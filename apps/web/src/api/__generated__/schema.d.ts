@@ -11,10 +11,28 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List crawl jobs (cursor-paginated, newest first) */
+        get: operations["listCrawls"];
         put?: never;
         /** Submit a crawl job */
         post: operations["createCrawl"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/crawls/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Fetch a single crawl job by id */
+        get: operations["getCrawl"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -60,6 +78,172 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * @description Parameters for submitting a new crawl job.
+         * @example {
+         *       "seedUrl": "https://example.com",
+         *       "maxDepth": 2,
+         *       "maxPages": 500
+         *     }
+         */
+        CreateCrawlRequest: {
+            /**
+             * Format: uri
+             * @description Absolute http or https URL to start crawling from.
+             * @example https://example.com
+             */
+            seedUrl: string;
+            /**
+             * @description Maximum link depth to follow from the seed URL.
+             * @example 2
+             */
+            maxDepth: number;
+            /**
+             * @description Maximum number of pages to fetch.
+             * @example 500
+             */
+            maxPages: number;
+        };
+        /**
+         * @description Lifecycle state of a crawl. Only queued is supported for now; more states are added in later specs.
+         * @example queued
+         * @enum {string}
+         */
+        CrawlStatus: "queued";
+        /**
+         * @description A crawl job with its full configuration and current status.
+         * @example {
+         *       "id": "7d8f3b2a-1c4e-4a9b-8f6d-2e5c9a1b3d4f",
+         *       "seedUrl": "https://example.com",
+         *       "maxDepth": 2,
+         *       "maxPages": 500,
+         *       "status": "queued",
+         *       "createdAt": "2026-06-14T10:00:00Z",
+         *       "updatedAt": "2026-06-14T10:00:00Z"
+         *     }
+         */
+        Crawl: {
+            /**
+             * Format: uuid
+             * @example 7d8f3b2a-1c4e-4a9b-8f6d-2e5c9a1b3d4f
+             */
+            id: string;
+            /** @example https://example.com */
+            seedUrl: string;
+            /** @example 2 */
+            maxDepth: number;
+            /** @example 500 */
+            maxPages: number;
+            status: components["schemas"]["CrawlStatus"];
+            /**
+             * Format: date-time
+             * @example 2026-06-14T10:00:00Z
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @example 2026-06-14T10:00:00Z
+             */
+            updatedAt: string;
+        };
+        /**
+         * @description Condensed crawl representation used in list responses.
+         * @example {
+         *       "id": "7d8f3b2a-1c4e-4a9b-8f6d-2e5c9a1b3d4f",
+         *       "seedUrl": "https://example.com",
+         *       "status": "queued",
+         *       "createdAt": "2026-06-14T10:00:00Z"
+         *     }
+         */
+        CrawlSummary: {
+            /**
+             * Format: uuid
+             * @example 7d8f3b2a-1c4e-4a9b-8f6d-2e5c9a1b3d4f
+             */
+            id: string;
+            /** @example https://example.com */
+            seedUrl: string;
+            status: components["schemas"]["CrawlStatus"];
+            /**
+             * Format: date-time
+             * @example 2026-06-14T10:00:00Z
+             */
+            createdAt: string;
+        };
+        /**
+         * @description A page of crawl summaries with an optional cursor to the next page.
+         * @example {
+         *       "items": [
+         *         {
+         *           "id": "7d8f3b2a-1c4e-4a9b-8f6d-2e5c9a1b3d4f",
+         *           "seedUrl": "https://example.com",
+         *           "status": "queued",
+         *           "createdAt": "2026-06-14T10:00:00Z"
+         *         }
+         *       ],
+         *       "nextCursor": "eyJjcmVhdGVkQXQiOiIyMDI2LTA2LTE0VDA5OjQ1OjAwWiIsImlkIjoiMWEyYjNjNGQ=\""
+         *     }
+         */
+        CrawlList: {
+            items: components["schemas"]["CrawlSummary"][];
+            /**
+             * @description Opaque token for the next page, or null when there are no more pages.
+             * @example eyJjcmVhdGVkQXQiOiIyMDI2LTA2LTE0VDA5OjQ1OjAwWiIsImlkIjoiMWEyYjNjNGQ="
+             */
+            nextCursor?: string | null;
+        };
+        /**
+         * @description A single field-level validation failure.
+         * @example {
+         *       "field": "seedUrl",
+         *       "message": "must be an absolute http or https URL"
+         *     }
+         */
+        FieldError: {
+            /**
+             * @description Name of the request field that failed validation.
+             * @example seedUrl
+             */
+            field: string;
+            /**
+             * @description Human-readable explanation of the failure.
+             * @example must be an absolute http or https URL
+             */
+            message: string;
+        };
+        /**
+         * @description Returned with a 400 when request validation fails.
+         * @example {
+         *       "message": "Request validation failed",
+         *       "errors": [
+         *         {
+         *           "field": "seedUrl",
+         *           "message": "must be an absolute http or https URL"
+         *         }
+         *       ]
+         *     }
+         */
+        ValidationError: {
+            /**
+             * @description Summary of the validation failure.
+             * @example Request validation failed
+             */
+            message: string;
+            errors: components["schemas"]["FieldError"][];
+        };
+        /**
+         * @description Returned with a 404 when a requested resource does not exist.
+         * @example {
+         *       "message": "crawl not found"
+         *     }
+         */
+        NotFoundError: {
+            /**
+             * @description Human-readable explanation of what was not found.
+             * @example crawl not found
+             */
+            message: string;
+        };
+        /**
          * @description Liveness response indicating the process is up and serving requests.
          * @example {
          *       "status": "ok"
@@ -95,6 +279,50 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    listCrawls: {
+        parameters: {
+            query?: {
+                /** @description Opaque base64url pagination token returned as nextCursor by a previous call. */
+                cursor?: string;
+                /** @description Maximum number of items to return. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of crawl summaries */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "id": "7d8f3b2a-1c4e-4a9b-8f6d-2e5c9a1b3d4f",
+                     *           "seedUrl": "https://example.com",
+                     *           "status": "queued",
+                     *           "createdAt": "2026-06-14T10:00:00Z"
+                     *         },
+                     *         {
+                     *           "id": "1a2b3c4d-5e6f-4071-8293-a4b5c6d7e8f9",
+                     *           "seedUrl": "https://another.example.org",
+                     *           "status": "queued",
+                     *           "createdAt": "2026-06-14T09:45:00Z"
+                     *         }
+                     *       ],
+                     *       "nextCursor": "eyJjcmVhdGVkQXQiOiIyMDI2LTA2LTE0VDA5OjQ1OjAwWiIsImlkIjoiMWEyYjNjNGQ=\""
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CrawlList"];
+                };
+            };
+        };
+    };
     createCrawl: {
         parameters: {
             query?: never;
@@ -102,14 +330,110 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "seedUrl": "https://example.com",
+                 *       "maxDepth": 2,
+                 *       "maxPages": 500
+                 *     }
+                 */
+                "application/json": components["schemas"]["CreateCrawlRequest"];
+            };
+        };
         responses: {
-            /** @description Crawl accepted */
+            /** @description Crawl accepted and queued */
             202: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "7d8f3b2a-1c4e-4a9b-8f6d-2e5c9a1b3d4f",
+                     *       "seedUrl": "https://example.com",
+                     *       "maxDepth": 2,
+                     *       "maxPages": 500,
+                     *       "status": "queued",
+                     *       "createdAt": "2026-06-14T10:00:00Z",
+                     *       "updatedAt": "2026-06-14T10:00:00Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Crawl"];
+                };
+            };
+            /** @description Invalid request body; one or more fields failed validation */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "message": "Request validation failed",
+                     *       "errors": [
+                     *         {
+                     *           "field": "seedUrl",
+                     *           "message": "must be an absolute http or https URL"
+                     *         },
+                     *         {
+                     *           "field": "maxPages",
+                     *           "message": "must be at least 1"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ValidationError"];
+                };
+            };
+        };
+    };
+    getCrawl: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Unique identifier of the crawl. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The requested crawl */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "7d8f3b2a-1c4e-4a9b-8f6d-2e5c9a1b3d4f",
+                     *       "seedUrl": "https://example.com",
+                     *       "maxDepth": 2,
+                     *       "maxPages": 500,
+                     *       "status": "queued",
+                     *       "createdAt": "2026-06-14T10:00:00Z",
+                     *       "updatedAt": "2026-06-14T10:00:00Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Crawl"];
+                };
+            };
+            /** @description No crawl exists with the given id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "message": "crawl not found"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["NotFoundError"];
+                };
             };
         };
     };
