@@ -19,7 +19,9 @@ import (
 // Pagination bounds for ListCrawls.
 const (
 	defaultLimit = 20
-	maxLimit     = 100
+	// MaxLimit is the largest page size a caller may request on GET /crawls;
+	// the HTTP layer rejects anything larger with 400 (matches the contract).
+	MaxLimit = 100
 )
 
 // maxPagesCeiling is the upper bound on max_pages a caller may request.
@@ -123,7 +125,7 @@ type Page struct {
 }
 
 // List returns a page of crawls newest-first. token is the opaque cursor from a
-// previous call (empty for the first page); limit is clamped to [1, maxLimit]
+// previous call (empty for the first page); limit is clamped to [1, MaxLimit]
 // and defaults to defaultLimit when <= 0. A malformed token yields
 // ErrInvalidCursor.
 func (s *Service) List(ctx context.Context, token string, limit int) (Page, error) {
@@ -224,8 +226,8 @@ func clampLimit(limit int) int {
 	switch {
 	case limit <= 0:
 		return defaultLimit
-	case limit > maxLimit:
-		return maxLimit
+	case limit > MaxLimit:
+		return MaxLimit
 	default:
 		return limit
 	}

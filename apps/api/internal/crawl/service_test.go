@@ -97,9 +97,9 @@ func TestClampLimit(t *testing.T) {
 		{-5, defaultLimit},
 		{1, 1},
 		{50, 50},
-		{maxLimit, maxLimit},
-		{maxLimit + 1, maxLimit},
-		{10000, maxLimit},
+		{MaxLimit, MaxLimit},
+		{MaxLimit + 1, MaxLimit},
+		{10000, MaxLimit},
 	}
 	for _, tc := range tests {
 		if got := clampLimit(tc.in); got != tc.want {

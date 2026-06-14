@@ -80,6 +80,9 @@ export function useCrawlList(cursor?: string) {
             "Failed to load crawls",
         );
       }
+      if (!data) {
+        throw new Error("Failed to load crawls: empty response");
+      }
       return data;
     },
   });

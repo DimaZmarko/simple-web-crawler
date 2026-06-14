@@ -48,6 +48,8 @@ function validate(values: {
   const pages = Number(values.maxPages);
   if (values.maxPages === "" || !Number.isInteger(pages) || pages < 1) {
     errors.maxPages = "Max pages must be an integer of 1 or more";
+  } else if (pages > 10000) {
+    errors.maxPages = "Max pages must be at most 10000";
   }
 
   return errors;

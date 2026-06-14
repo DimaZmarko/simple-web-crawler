@@ -280,6 +280,17 @@ func TestListCrawls(t *testing.T) {
 		}
 	})
 
+	t.Run("over-max limit returns 400", func(t *testing.T) {
+		router := newTestRouter(fakeCrawlService{})
+		req := httptest.NewRequest(http.MethodGet, "/crawls?limit=500", nil)
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("status = %d, want 400", rec.Code)
+		}
+	})
+
 	t.Run("invalid cursor returns 400", func(t *testing.T) {
 		svc := fakeCrawlService{listFn: func(_ context.Context, _ string, _ int) (crawl.Page, error) {
 			return crawl.Page{}, crawl.ErrInvalidCursor

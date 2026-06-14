@@ -130,7 +130,7 @@ info:
   description: Single source of truth for the crawler HTTP API. Generated clients
     derive from this file.
   title: Simple Web Crawler API
-  version: 0.2.0
+  version: 0.3.1
 paths:
   /crawls:
     get:

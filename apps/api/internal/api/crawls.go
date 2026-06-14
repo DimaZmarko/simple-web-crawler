@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -92,11 +93,11 @@ func (h *CrawlHandler) List(w http.ResponseWriter, r *http.Request) {
 	limit := 0
 	if raw := q.Get("limit"); raw != "" {
 		n, err := strconv.Atoi(raw)
-		if err != nil || n < 1 {
+		if err != nil || n < 1 || n > crawl.MaxLimit {
 			writeJSON(w, http.StatusBadRequest, types.ValidationError{
 				Message: "Request validation failed",
 				Errors: []types.FieldError{
-					{Field: "limit", Message: "must be a positive integer"},
+					{Field: "limit", Message: fmt.Sprintf("must be an integer between 1 and %d", crawl.MaxLimit)},
 				},
 			})
 			return

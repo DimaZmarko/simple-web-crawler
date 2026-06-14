@@ -1,7 +1,7 @@
 // Command server is the entrypoint for the Simple Web Crawler API.
 //
 // @title       Simple Web Crawler API
-// @version     0.2.0
+// @version     0.3.1
 // @description Single source of truth for the crawler HTTP API. Generated clients derive from this file.
 // @BasePath    /
 package main
