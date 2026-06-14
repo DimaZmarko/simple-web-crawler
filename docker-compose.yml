@@ -4,15 +4,15 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: crawler
-      POSTGRES_PASSWORD: crawler
-      POSTGRES_DB: crawler
+      POSTGRES_USER: ${POSTGRES_USER:-crawler}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-crawler}
+      POSTGRES_DB: ${POSTGRES_DB:-crawler}
     ports:
       - "5432:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U crawler -d crawler"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-crawler} -d ${POSTGRES_DB:-crawler}"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -23,7 +23,7 @@ services:
       - ./apps/api/db/migrations:/migrations:ro
     command:
       - "-path=/migrations"
-      - "-database=postgres://crawler:crawler@db:5432/crawler?sslmode=disable"
+      - "-database=${DATABASE_URI:-postgres://crawler:crawler@db:5432/crawler?sslmode=disable}"
       - "up"
     depends_on:
       db:
@@ -35,7 +35,7 @@ services:
       context: ./apps/api
       target: prod
     environment:
-      DATABASE_URL: postgres://crawler:crawler@db:5432/crawler?sslmode=disable
+      DATABASE_URL: ${DATABASE_URI:-postgres://crawler:crawler@db:5432/crawler?sslmode=disable}
       PORT: "8080"
     ports:
       - "8080:8080"

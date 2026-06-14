@@ -11,7 +11,7 @@ A concurrent web-crawler service. Go REST API backend + Next.js/React frontend, 
 | `packages/api-contract` | `openapi.yaml` — the single source of truth for the HTTP API. Generated clients/types derive from it. |
 | `specs/` | Feature specs from the spec-workflow skill (Specify → Plan → Tasks). |
 | `.claude/agents` | Subagents (api-contract-keeper, backend-engineer, frontend-engineer, test-runner, code-reviewer, plan-verifier, spec-verifier). |
-| `.claude/skills` | Workflows (spec-workflow, parallel-dispatch) and conventions (go, nextjs, api-contract). |
+| `.claude/skills` | Workflows (spec-workflow, parallel-dispatch), conventions (go, nextjs, api-contract), and `prepare-pr` (draft a PR summary from the branch diff). |
 | `.claude/README.md` | Routing decision tree — fast path vs Standard/Rigorous tiers. Start here when deciding how much process a change needs. |
 | `.claude/agent-memory` | Per-agent durable notes that persist across sessions. Agents append recurring lessons here (e.g. the code-reviewer's checklist gotchas); read at the start of an agent's run so reviews and implementations get sharper over time. |
 
@@ -54,9 +54,8 @@ For the full workflow, invoke the `spec-workflow` skill to go Specify → Plan �
 
 ## MCP servers
 
-`.mcp.json` wires up two project-scoped MCP servers. Both depend on the local stack — they are inert against a stopped one:
-- **postgres** — inspect the schema and query data directly. It connects to `postgresql://localhost:5432/crawler`, so bring the DB up first (`make up` or `make watch`). Useful for confirming migrations applied or eyeballing crawl rows during debugging.
-- **playwright** — drive a browser to debug the e2e specs (`make test-e2e`), which run against a running stack. See `DOCKER.md` for bringing the stack up under Colima.
+`.mcp.json` wires up one project-scoped MCP server. It depends on the local stack — it is inert against a stopped one:
+- **postgres** — inspect the schema and query data directly. Runs the maintained `crystaldba/postgres-mcp` (Postgres MCP Pro) Docker image in `--access-mode=restricted` (read-only). It joins the compose network (`simple-web-crawler_default`) and reads credentials from the root `.env` via `--env-file`, so it reaches Postgres at `db:5432` exactly like the app does — bring the DB up first (`make up` or `make watch`). Useful for confirming migrations applied or eyeballing crawl rows during debugging. **Single source of truth:** DB credentials live only in `.env` (gitignored; template in `.env.example`); docker-compose (`db`/`migrate`/`api`) and this MCP server all derive from it. Copy `.env.example` to `.env` on first checkout.
 
 ## Local environment
 

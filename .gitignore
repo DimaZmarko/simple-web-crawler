@@ -8,6 +8,10 @@
 *.swp
 *~
 
+# Local env (credentials) — committed template lives in .env.example
+.env
+.env.local
+
 # Local Claude Code overrides (machine-specific)
 .claude/settings.local.json
 
