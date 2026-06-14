@@ -1,1 +1,2 @@
 - [openapi-fetch error vs data on non-2xx](review_openapi-fetch-nonok.md) — non-2xx bodies land in `error`, not `data`; watch frontend handlers that assume `data` on 503
+- [Keyset cursor: equal-timestamp ties & round-trip](review_keyset-cursor-equal-timestamps.md) — cursor only safe if created_at comes from DB read; tests with sleeps never exercise the id tie-breaker
