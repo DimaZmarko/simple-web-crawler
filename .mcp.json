@@ -2,13 +2,14 @@
   "mcpServers": {
     "postgres": {
       "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-postgres", "postgresql://localhost:5432/crawler"]
-    },
-    "playwright": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@playwright/mcp@latest"]
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm",
+        "--network", "simple-web-crawler_default",
+        "--env-file", ".env",
+        "crystaldba/postgres-mcp",
+        "--access-mode=restricted"
+      ]
     }
   }
 }
