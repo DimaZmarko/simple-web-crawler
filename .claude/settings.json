@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Read",
+      "Edit",
+      "Write",
+      "Bash(make:*)",
+      "Bash(go:*)",
+      "Bash(gofmt:*)",
+      "Bash(goimports:*)",
+      "Bash(sqlc:*)",
+      "Bash(docker:*)",
+      "Bash(docker-compose:*)",
+      "Bash(pnpm:*)",
+      "Bash(npx:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git branch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git switch:*)",
+      "Bash(git merge:*)",
+      "Bash(git rebase:*)",
+      "Bash(git stash:*)",
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)",
+      "Bash(git worktree:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(find:*)",
+      "Bash(echo:*)",
+      "Bash(jq:*)",
+      "Agent(api-contract-keeper)",
+      "Agent(backend-engineer)",
+      "Agent(frontend-engineer)",
+      "Agent(test-runner)",
+      "Agent(code-reviewer)",
+      "Agent(plan-verifier)",
+      "Agent(spec-verifier)"
+    ],
+    "ask": [
+      "Bash(git push:*)"
+    ],
+    "deny": [
+      "Read(./**/.env)",
+      "Read(./**/.env.*)",
+      "Read(./**/*.pem)",
+      "Read(./**/secrets/**)",
+      "Bash(rm -rf:*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          { "type": "command", "command": "./.claude/hooks/format.sh" },
+          { "type": "command", "command": "./.claude/hooks/contract-guard.sh" }
+        ]
+      }
+    ]
+  },
+  "env": {
+    "GOFLAGS": "-mod=mod"
+  },
+  "includeCoAuthoredBy": false
+}

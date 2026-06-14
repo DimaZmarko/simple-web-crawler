@@ -1,0 +1,43 @@
+# Auto-merged by `docker compose` on top of docker-compose.yml.
+# Run with: docker compose watch   (recommended on Colima)
+# Or:        docker compose up      (no live sync)
+
+services:
+  api:
+    build:
+      target: dev
+    # Persist Go caches across restarts (source is synced, not bind-mounted).
+    volumes:
+      - go-build-cache:/root/.cache/go-build
+      - go-mod-cache:/go/pkg/mod
+    develop:
+      watch:
+        - action: sync
+          path: ./apps/api
+          target: /app
+          ignore:
+            - tmp/
+            - "*_test.go"
+        - action: rebuild
+          path: ./apps/api/go.mod
+
+  web:
+    build:
+      target: dev
+    environment:
+      API_URL: http://api:8080
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+    develop:
+      watch:
+        - action: sync
+          path: ./apps/web
+          target: /app
+          ignore:
+            - node_modules/
+            - .next/
+        - action: rebuild
+          path: ./apps/web/package.json
+
+volumes:
+  go-build-cache:
+  go-mod-cache:

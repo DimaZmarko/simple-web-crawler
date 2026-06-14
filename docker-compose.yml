@@ -1,0 +1,63 @@
+name: simple-web-crawler
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: crawler
+      POSTGRES_PASSWORD: crawler
+      POSTGRES_DB: crawler
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crawler -d crawler"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    image: migrate/migrate:latest
+    volumes:
+      - ./apps/api/db/migrations:/migrations:ro
+    command:
+      - "-path=/migrations"
+      - "-database=postgres://crawler:crawler@db:5432/crawler?sslmode=disable"
+      - "up"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build:
+      context: ./apps/api
+      target: prod
+    environment:
+      DATABASE_URL: postgres://crawler:crawler@db:5432/crawler?sslmode=disable
+      PORT: "8080"
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  web:
+    build:
+      context: ./apps/web
+      target: prod
+    environment:
+      # Server-side (RSC/route handlers) reach the API over the compose network:
+      API_URL: http://api:8080
+      # Browser-side reaches it through the host-published port:
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  db-data:

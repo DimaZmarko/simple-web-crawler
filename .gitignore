@@ -1,0 +1,15 @@
+# macOS
+.DS_Store
+
+# IDE configs
+.idea
+
+# Editor/OS cruft
+*.swp
+*~
+
+# Local Claude Code overrides (machine-specific)
+.claude/settings.local.json
+
+# Git worktrees created by isolated engineer agents
+.claude/worktrees/

@@ -1,0 +1,1 @@
+- [openapi-fetch error vs data on non-2xx](review_openapi-fetch-nonok.md) — non-2xx bodies land in `error`, not `data`; watch frontend handlers that assume `data` on 503

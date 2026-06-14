@@ -1,0 +1,38 @@
+{
+  "name": "web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "pnpm@9.15.9",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "gen-client": "openapi-typescript ../../packages/api-contract/openapi.yaml -o ./src/api/__generated__/schema.d.ts"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.59.0",
+    "next": "15.5.4",
+    "openapi-fetch": "^0.13.0",
+    "react": "19.0.0",
+    "react-dom": "19.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.51.1",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^9.18.0",
+    "eslint-config-next": "15.5.4",
+    "jsdom": "^25.0.1",
+    "openapi-typescript": "^7.4.4",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  }
+}
