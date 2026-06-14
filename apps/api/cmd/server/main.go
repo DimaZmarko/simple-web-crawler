@@ -20,6 +20,8 @@ import (
 
 	"github.com/DimaZmarko/simple-web-crawler/apps/api/internal/api"
 	"github.com/DimaZmarko/simple-web-crawler/apps/api/internal/config"
+	"github.com/DimaZmarko/simple-web-crawler/apps/api/internal/crawl"
+	"github.com/DimaZmarko/simple-web-crawler/apps/api/internal/db"
 )
 
 const shutdownTimeout = 10 * time.Second
@@ -50,7 +52,8 @@ func run(logger zerolog.Logger) error {
 	}
 	defer pool.Close()
 
-	router := api.NewRouter(pool, logger, cfg.AllowedOrigins...)
+	crawlSvc := crawl.NewService(db.New(pool))
+	router := api.NewRouter(pool, crawlSvc, logger, cfg.AllowedOrigins...)
 
 	server := &http.Server{
 		Addr:    ":" + cfg.Port,

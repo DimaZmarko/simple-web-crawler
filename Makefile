@@ -121,7 +121,7 @@ gen-contract: ## Regenerate Go types + TS client from packages/api-contract/open
 		npx -y openapi-typescript@$(OPENAPI_TS_VERSION) packages/api-contract/openapi.yaml -o apps/web/src/api/__generated__/schema.d.ts
 
 swagger: ## Regenerate swagger docs from swaggo annotations (apps/api/docs)
-	cd apps/api && go run github.com/swaggo/swag/cmd/swag@$(SWAG_VERSION) init -g cmd/server/main.go -o ./docs
+	cd apps/api && go run github.com/swaggo/swag/cmd/swag@$(SWAG_VERSION) init -g cmd/server/main.go -o ./docs --parseInternal
 
 migrate: ## Apply DB migrations (reuses the compose `migrate` service)
 	$(COMPOSE) run --rm migrate
