@@ -1,16 +1,134 @@
 openapi: 3.1.0
 info:
   title: Simple Web Crawler API
-  version: 0.2.0
+  version: 0.3.1
   description: Single source of truth for the crawler HTTP API. Generated clients derive from this file.
 paths:
   /crawls:
     post:
       operationId: createCrawl
       summary: Submit a crawl job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCrawlRequest'
+            example:
+              seedUrl: https://example.com
+              maxDepth: 2
+              maxPages: 500
       responses:
         "202":
-          description: Crawl accepted
+          description: Crawl accepted and queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Crawl'
+              example:
+                id: 7d8f3b2a-1c4e-4a9b-8f6d-2e5c9a1b3d4f
+                seedUrl: https://example.com
+                maxDepth: 2
+                maxPages: 500
+                status: queued
+                createdAt: "2026-06-14T10:00:00Z"
+                updatedAt: "2026-06-14T10:00:00Z"
+        "400":
+          description: Invalid request body; one or more fields failed validation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              example:
+                message: Request validation failed
+                errors:
+                  - field: seedUrl
+                    message: must be an absolute http or https URL
+                  - field: maxPages
+                    message: must be at least 1
+    get:
+      operationId: listCrawls
+      summary: List crawl jobs (cursor-paginated, newest first)
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          description: Opaque base64url pagination token returned as nextCursor by a previous call.
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of items to return.
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+            minimum: 1
+      responses:
+        "200":
+          description: A page of crawl summaries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrawlList'
+              example:
+                items:
+                  - id: 7d8f3b2a-1c4e-4a9b-8f6d-2e5c9a1b3d4f
+                    seedUrl: https://example.com
+                    status: queued
+                    createdAt: "2026-06-14T10:00:00Z"
+                  - id: 1a2b3c4d-5e6f-4071-8293-a4b5c6d7e8f9
+                    seedUrl: https://another.example.org
+                    status: queued
+                    createdAt: "2026-06-14T09:45:00Z"
+                nextCursor: eyJjcmVhdGVkQXQiOiIyMDI2LTA2LTE0VDA5OjQ1OjAwWiIsImlkIjoiMWEyYjNjNGQ="
+        "400":
+          description: Invalid pagination parameters; limit out of range/non-numeric or cursor undecodable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              example:
+                message: Request validation failed
+                errors:
+                  - field: limit
+                    message: must be an integer between 1 and 100
+  /crawls/{id}:
+    get:
+      operationId: getCrawl
+      summary: Fetch a single crawl job by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier of the crawl.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: The requested crawl
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Crawl'
+              example:
+                id: 7d8f3b2a-1c4e-4a9b-8f6d-2e5c9a1b3d4f
+                seedUrl: https://example.com
+                maxDepth: 2
+                maxPages: 500
+                status: queued
+                createdAt: "2026-06-14T10:00:00Z"
+                updatedAt: "2026-06-14T10:00:00Z"
+        "404":
+          description: No crawl exists with the given id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+              example:
+                message: crawl not found
   /healthz:
     get:
       operationId: healthz
@@ -51,6 +169,182 @@ paths:
                   db: down
 components:
   schemas:
+    CreateCrawlRequest:
+      type: object
+      description: Parameters for submitting a new crawl job.
+      required:
+        - seedUrl
+        - maxDepth
+        - maxPages
+      properties:
+        seedUrl:
+          type: string
+          format: uri
+          description: Absolute http or https URL to start crawling from.
+          example: https://example.com
+        maxDepth:
+          type: integer
+          minimum: 0
+          description: Maximum link depth to follow from the seed URL.
+          example: 2
+        maxPages:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          description: Maximum number of pages to fetch.
+          example: 500
+      example:
+        seedUrl: https://example.com
+        maxDepth: 2
+        maxPages: 500
+    CrawlStatus:
+      type: string
+      description: Lifecycle state of a crawl. Only queued is supported for now; more states are added in later specs.
+      enum:
+        - queued
+      example: queued
+    Crawl:
+      type: object
+      description: A crawl job with its full configuration and current status.
+      required:
+        - id
+        - seedUrl
+        - maxDepth
+        - maxPages
+        - status
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 7d8f3b2a-1c4e-4a9b-8f6d-2e5c9a1b3d4f
+        seedUrl:
+          type: string
+          example: https://example.com
+        maxDepth:
+          type: integer
+          example: 2
+        maxPages:
+          type: integer
+          example: 500
+        status:
+          $ref: '#/components/schemas/CrawlStatus'
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-06-14T10:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2026-06-14T10:00:00Z"
+      example:
+        id: 7d8f3b2a-1c4e-4a9b-8f6d-2e5c9a1b3d4f
+        seedUrl: https://example.com
+        maxDepth: 2
+        maxPages: 500
+        status: queued
+        createdAt: "2026-06-14T10:00:00Z"
+        updatedAt: "2026-06-14T10:00:00Z"
+    CrawlSummary:
+      type: object
+      description: Condensed crawl representation used in list responses.
+      required:
+        - id
+        - seedUrl
+        - status
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 7d8f3b2a-1c4e-4a9b-8f6d-2e5c9a1b3d4f
+        seedUrl:
+          type: string
+          example: https://example.com
+        status:
+          $ref: '#/components/schemas/CrawlStatus'
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-06-14T10:00:00Z"
+      example:
+        id: 7d8f3b2a-1c4e-4a9b-8f6d-2e5c9a1b3d4f
+        seedUrl: https://example.com
+        status: queued
+        createdAt: "2026-06-14T10:00:00Z"
+    CrawlList:
+      type: object
+      description: A page of crawl summaries with an optional cursor to the next page.
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CrawlSummary'
+        nextCursor:
+          type: string
+          nullable: true
+          description: Opaque token for the next page, or null when there are no more pages.
+          example: eyJjcmVhdGVkQXQiOiIyMDI2LTA2LTE0VDA5OjQ1OjAwWiIsImlkIjoiMWEyYjNjNGQ="
+      example:
+        items:
+          - id: 7d8f3b2a-1c4e-4a9b-8f6d-2e5c9a1b3d4f
+            seedUrl: https://example.com
+            status: queued
+            createdAt: "2026-06-14T10:00:00Z"
+        nextCursor: eyJjcmVhdGVkQXQiOiIyMDI2LTA2LTE0VDA5OjQ1OjAwWiIsImlkIjoiMWEyYjNjNGQ="
+    FieldError:
+      type: object
+      description: A single field-level validation failure.
+      required:
+        - field
+        - message
+      properties:
+        field:
+          type: string
+          description: Name of the request field that failed validation.
+          example: seedUrl
+        message:
+          type: string
+          description: Human-readable explanation of the failure.
+          example: must be an absolute http or https URL
+      example:
+        field: seedUrl
+        message: must be an absolute http or https URL
+    ValidationError:
+      type: object
+      description: Returned with a 400 when request validation fails.
+      required:
+        - message
+        - errors
+      properties:
+        message:
+          type: string
+          description: Summary of the validation failure.
+          example: Request validation failed
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldError'
+      example:
+        message: Request validation failed
+        errors:
+          - field: seedUrl
+            message: must be an absolute http or https URL
+    NotFoundError:
+      type: object
+      description: Returned with a 404 when a requested resource does not exist.
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          description: Human-readable explanation of what was not found.
+          example: crawl not found
+      example:
+        message: crawl not found
     HealthStatus:
       type: object
       description: Liveness response indicating the process is up and serving requests.

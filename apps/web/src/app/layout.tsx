@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
+import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
+import { ThemeProvider } from "@mui/material/styles";
+import CssBaseline from "@mui/material/CssBaseline";
+import { theme } from "@/theme";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: "Simple Web Crawler",
-  description: "Simple web crawler — health slice",
+  description: "Submit, list, and inspect crawl jobs",
 };
 
 export default function RootLayout({
@@ -12,7 +16,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <Providers>{children}</Providers>
+        <AppRouterCacheProvider options={{ key: "mui" }}>
+          <ThemeProvider theme={theme}>
+            <CssBaseline />
+            <Providers>{children}</Providers>
+          </ThemeProvider>
+        </AppRouterCacheProvider>
       </body>
     </html>
   );

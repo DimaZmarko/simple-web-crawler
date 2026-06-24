@@ -1,0 +1,1 @@
+- [Codegen behavior](project_codegen-behavior.md) — gen-contract: TS reflects per-operation changes; Go types only change for new components/schemas; 3.1 warning is benign

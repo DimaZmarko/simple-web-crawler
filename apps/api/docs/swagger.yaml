@@ -1,5 +1,77 @@
 basePath: /
 definitions:
+  types.Crawl:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: string
+      maxDepth:
+        type: integer
+      maxPages:
+        type: integer
+      seedUrl:
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/types.CrawlStatus'
+        description: Status Lifecycle state of a crawl. Only queued is supported for
+          now; more states are added in later specs.
+      updatedAt:
+        type: string
+    type: object
+  types.CrawlList:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/types.CrawlSummary'
+        type: array
+      nextCursor:
+        description: NextCursor Opaque token for the next page, or null when there
+          are no more pages.
+        type: string
+    type: object
+  types.CrawlStatus:
+    enum:
+    - queued
+    type: string
+    x-enum-varnames:
+    - Queued
+  types.CrawlSummary:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: string
+      seedUrl:
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/types.CrawlStatus'
+        description: Status Lifecycle state of a crawl. Only queued is supported for
+          now; more states are added in later specs.
+    type: object
+  types.CreateCrawlRequest:
+    properties:
+      maxDepth:
+        description: MaxDepth Maximum link depth to follow from the seed URL.
+        type: integer
+      maxPages:
+        description: MaxPages Maximum number of pages to fetch.
+        type: integer
+      seedUrl:
+        description: SeedUrl Absolute http or https URL to start crawling from.
+        type: string
+    type: object
+  types.FieldError:
+    properties:
+      field:
+        description: Field Name of the request field that failed validation.
+        type: string
+      message:
+        description: Message Human-readable explanation of the failure.
+        type: string
+    type: object
   types.HealthStatus:
     properties:
       status:
@@ -11,6 +83,12 @@ definitions:
     type: string
     x-enum-varnames:
     - HealthStatusStatusOk
+  types.NotFoundError:
+    properties:
+      message:
+        description: Message Human-readable explanation of what was not found.
+        type: string
+    type: object
   types.ReadinessStatus:
     properties:
       checks:
@@ -37,13 +115,95 @@ definitions:
     x-enum-varnames:
     - Degraded
     - Ok
+  types.ValidationError:
+    properties:
+      errors:
+        items:
+          $ref: '#/definitions/types.FieldError'
+        type: array
+      message:
+        description: Message Summary of the validation failure.
+        type: string
+    type: object
 info:
   contact: {}
   description: Single source of truth for the crawler HTTP API. Generated clients
     derive from this file.
   title: Simple Web Crawler API
-  version: 0.2.0
+  version: 0.3.1
 paths:
+  /crawls:
+    get:
+      parameters:
+      - description: Opaque base64url pagination token
+        in: query
+        name: cursor
+        type: string
+      - description: Maximum number of items to return
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/types.CrawlList'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/types.ValidationError'
+      summary: List crawl jobs (cursor-paginated, newest first)
+      tags:
+      - crawls
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Crawl configuration
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.CreateCrawlRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/types.Crawl'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/types.ValidationError'
+      summary: Submit a crawl job
+      tags:
+      - crawls
+  /crawls/{id}:
+    get:
+      parameters:
+      - description: Crawl id
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/types.Crawl'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/types.NotFoundError'
+      summary: Fetch a single crawl job by id
+      tags:
+      - crawls
   /healthz:
     get:
       produces:
